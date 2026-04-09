@@ -1,6 +1,6 @@
 import { Car } from "@/types";
 
-export const carsData: Omit<Car, "id">[] = [
+export const carsData: Omit<Car, "id" | "listingType" | "salePrice" | "mileage" | "year" | "condition" | "status">[] = [
   {
     slug: "bmw-7-series",
     name: "BMW 7 Series",
