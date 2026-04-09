@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { carsData } from "@/lib/cars-data";
 import { formatCurrency } from "@/lib/utils";
@@ -20,6 +20,14 @@ const categories: { label: string; value: CarCategory | "all" }[] = [
 ];
 
 export default function FleetPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff5f00] border-t-transparent" /></div>}>
+      <FleetContent />
+    </Suspense>
+  );
+}
+
+function FleetContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const mode = (searchParams.get("mode") as "rent" | "buy") || "rent";
