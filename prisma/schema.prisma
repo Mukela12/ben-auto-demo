@@ -15,8 +15,8 @@ model Car {
   category      String
   tagline       String    @default("")
   description   String
-  dailyRate     Int       // cents
-  depositAmount Int       // cents
+  dailyRate     Int       // cents (rental price per day)
+  depositAmount Int       // cents (rental deposit)
   seats         Int
   doors         Int       @default(4)
   transmission  String    @default("automatic")
@@ -28,9 +28,21 @@ model Car {
   galleryUrls   String[]
   featured      Boolean   @default(false)
   available     Boolean   @default(true)
+
+  // Buy/Rent listing mode
+  listingType   String    @default("rent") // "rent" | "buy" | "both"
+  salePrice     Int?      // cents (purchase price, e.g., 4500000 = $45,000)
+  mileage       Int?      // miles
+  year          Int?      // model year
+  condition     String?   // "new" | "like_new" | "excellent" | "good"
+
+  // Vehicle status (replaces simple available boolean for new logic)
+  status        String    @default("available") // "available" | "rented" | "pending_sale" | "sold" | "maintenance" | "unlisted"
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   bookings      Booking[]
+  quoteRequests QuoteRequest[]
 }
 
 model Booking {
@@ -51,10 +63,39 @@ model Booking {
   customerPhone   String?
   extras          Json?
   notes           String?
+  canceledReason  String?
   carId           String
   car             Car      @relation(fields: [carId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model QuoteRequest {
+  id                String    @id @default(cuid())
+  referenceNumber   String    @unique
+  status            String    @default("new") // "new" | "contacted" | "negotiating" | "quoted" | "sold" | "lost"
+
+  // Car reference
+  carId             String
+  car               Car       @relation(fields: [carId], references: [id])
+
+  // Customer info
+  customerName      String
+  customerEmail     String
+  customerPhone     String
+  message           String?
+
+  // Optional details
+  financingInterest Boolean   @default(false)
+  tradeInInterest   Boolean   @default(false)
+
+  // Admin tracking
+  adminNotes        String?
+  contactedAt       DateTime?
+  closedAt          DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Location {

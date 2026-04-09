@@ -19,6 +19,14 @@ export interface Car {
   galleryUrls: string[];
   featured: boolean;
   available: boolean;
+
+  // Buy/Rent fields
+  listingType: ListingType;
+  salePrice: number | null; // cents
+  mileage: number | null;
+  year: number | null;
+  condition: CarCondition | null;
+  status: CarStatus;
 }
 
 export type CarCategory =
@@ -29,6 +37,18 @@ export type CarCategory =
   | "luxury"
   | "van"
   | "truck";
+
+export type ListingType = "rent" | "buy" | "both";
+
+export type CarCondition = "new" | "like_new" | "excellent" | "good";
+
+export type CarStatus =
+  | "available"
+  | "rented"
+  | "pending_sale"
+  | "sold"
+  | "maintenance"
+  | "unlisted";
 
 export interface Booking {
   id: string;
@@ -47,6 +67,7 @@ export interface Booking {
   customerEmail: string;
   customerPhone: string;
   extras: BookingExtras;
+  canceledReason: string | null;
   car: Car;
   carId: string;
   createdAt: string;
@@ -66,6 +87,32 @@ export interface BookingExtras {
   gps: boolean;
   childSeat: number;
 }
+
+export interface QuoteRequest {
+  id: string;
+  referenceNumber: string;
+  status: QuoteStatus;
+  carId: string;
+  car: Car;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  message: string | null;
+  financingInterest: boolean;
+  tradeInInterest: boolean;
+  adminNotes: string | null;
+  contactedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export type QuoteStatus =
+  | "new"
+  | "contacted"
+  | "negotiating"
+  | "quoted"
+  | "sold"
+  | "lost";
 
 export interface Location {
   id: string;

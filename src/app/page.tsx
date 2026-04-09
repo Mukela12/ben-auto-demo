@@ -1,75 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ValueProps } from "@/components/car-rental/value-props";
-import { HeroSearchBar } from "@/components/car-rental/hero-search-bar";
+import { HeroSection } from "@/components/car-rental/hero-section";
 import { HowItWorks } from "@/components/car-rental/how-it-works";
 import { CTASection } from "@/components/car-rental/cta-section";
 
 export default function Home() {
   return (
     <main>
-      {/* Hero Section */}
-      <section className="relative h-auto min-h-screen overflow-hidden bg-surface-dark md:h-screen md:min-h-[700px]">
-        <Image
-          src="/heroes/homepage-hero.jpg"
-          alt="Premium car rental"
-          fill
-          className="object-cover opacity-60"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-        {/* Navigation */}
-        <nav className="relative z-20 flex items-center justify-between px-6 py-4 lg:px-12 lg:py-5">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/brand/ben-auto-logo.png" alt="Ben Auto" width={140} height={46} className="h-10 w-auto md:h-12" />
-          </Link>
-          <div className="hidden items-center gap-6 md:flex">
-            <Link href="/fleet" className="text-sm font-medium text-white/80 transition-colors hover:text-white">
-              Fleet
-            </Link>
-            <Link href="/login" className="text-sm font-medium text-white/80 transition-colors hover:text-white">
-              Admin Demo
-            </Link>
-            <Link href="/book" className="rounded-full bg-[#ff5f00] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#ff5f00]/90 hover:shadow-lg hover:shadow-[#ff5f00]/25">
-              Book a Car
-            </Link>
-          </div>
-          <Link href="/login" className="text-xs font-medium text-white/60 md:hidden">
-            Admin
-          </Link>
-        </nav>
-
-        {/* Mobile: content + search bar in flow (centered) */}
-        <div className="relative z-10 flex flex-col items-center px-4 pb-8 pt-16 text-center md:hidden">
-          <h1 className="font-[var(--font-inter-tight)] text-4xl font-black uppercase leading-[0.95] tracking-tight text-white">
-            Drive<br />
-            <span className="text-[#ff5f00]">Premium</span>
-          </h1>
-          <p className="mt-4 max-w-sm text-sm text-white/70">
-            Premium car rental at prices you&apos;ll love. Curated fleet, seamless booking, worldwide.
-          </p>
-          <div className="mt-6 w-full">
-            <HeroSearchBar />
-          </div>
-        </div>
-
-        {/* Desktop: centered content with absolute search bar */}
-        <div className="relative z-10 hidden h-full flex-col items-center justify-center px-6 text-center md:flex">
-          <h1 className="font-[var(--font-inter-tight)] text-7xl font-black uppercase leading-[0.95] tracking-tight text-white lg:text-8xl">
-            Drive<br />
-            <span className="text-[#ff5f00]">Premium</span>
-          </h1>
-          <p className="mt-6 max-w-lg text-lg text-white/70">
-            Premium car rental at prices you&apos;ll love. Curated fleet, seamless booking, worldwide.
-          </p>
-        </div>
-
-        {/* Desktop: search bar pinned to bottom */}
-        <div className="absolute bottom-8 left-1/2 z-20 hidden w-full max-w-5xl -translate-x-1/2 px-4 md:block">
-          <HeroSearchBar />
-        </div>
-      </section>
+      {/* Hero Section with Rent/Buy Toggle */}
+      <HeroSection />
 
       {/* Value Props */}
       <ValueProps />
@@ -132,7 +72,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">
               <Image src="/brand/ben-auto-logo.png" alt="Ben Auto" width={120} height={40} className="h-10 w-auto" />
-              <p className="mt-3 text-sm text-white/50">Premium car rental. Worldwide.</p>
+              <p className="mt-3 text-sm text-white/50">Premium car rental &amp; sales.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40">Fleet</h4>

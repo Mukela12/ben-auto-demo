@@ -18,7 +18,19 @@ interface Car {
   horsepower: number;
   imageUrl: string;
   available: boolean;
+  listingType: string;
+  salePrice: number | null;
+  mileage: number | null;
+  year: number | null;
+  condition: string | null;
+  status: string;
 }
+
+const listingBadge: Record<string, { label: string; color: string }> = {
+  rent: { label: "Rent", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  buy: { label: "Sale", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  both: { label: "Rent & Sale", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+};
 
 export default function FleetManagementPage() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -161,9 +173,22 @@ export default function FleetManagementPage() {
           <div key={car.id} className="overflow-hidden rounded-xl bg-card shadow-sm">
             <div className="relative h-32 bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] md:h-40">
               <Image src={car.imageUrl} alt={car.name} fill className="object-contain p-4" />
-              {!car.available && (
+              {car.status === "sold" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">SOLD</span>
+                </div>
+              )}
+              {!car.available && car.status !== "sold" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">Unavailable</span>
+                </div>
+              )}
+              {/* Listing type badge */}
+              {car.listingType && listingBadge[car.listingType] && (
+                <div className="absolute left-2 top-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${listingBadge[car.listingType].color}`}>
+                    {listingBadge[car.listingType].label}
+                  </span>
                 </div>
               )}
             </div>
@@ -173,12 +198,21 @@ export default function FleetManagementPage() {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-[#ff5f00]">{car.category}</p>
                   <h3 className="truncate font-[var(--font-inter-tight)] text-xs font-bold md:text-sm">{car.name}</h3>
                 </div>
-                <p className="shrink-0 font-[var(--font-inter-tight)] text-sm font-bold md:text-base">{formatCurrency(car.dailyRate)}<span className="text-[10px] font-normal text-muted-foreground">/day</span></p>
+                <div className="shrink-0 text-right">
+                  {(car.listingType === "rent" || car.listingType === "both") && (
+                    <p className="font-[var(--font-inter-tight)] text-sm font-bold md:text-base">{formatCurrency(car.dailyRate)}<span className="text-[10px] font-normal text-muted-foreground">/day</span></p>
+                  )}
+                  {(car.listingType === "buy" || car.listingType === "both") && car.salePrice && (
+                    <p className="text-[10px] font-semibold text-green-600 dark:text-green-400">Sale: {formatCurrency(car.salePrice)}</p>
+                  )}
+                </div>
               </div>
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex gap-3 text-xs text-muted-foreground">
                   <span>{car.seats}s</span>
                   <span>{car.horsepower}HP</span>
+                  {car.year && <span>{car.year}</span>}
+                  {car.mileage != null && <span>{(car.mileage / 1000).toFixed(0)}k mi</span>}
                 </div>
                 <button
                   onClick={() => toggleAvailability(car)}
@@ -207,6 +241,13 @@ function AddVehicleForm({ onClose, onAdded }: { onClose: () => void; onAdded: ()
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // New buy/sale fields
+  const [listingType, setListingType] = useState("rent");
+  const [salePrice, setSalePrice] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [year, setYear] = useState("");
+  const [condition, setCondition] = useState("excellent");
+  const showSaleFields = listingType === "buy" || listingType === "both";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -249,10 +290,17 @@ function AddVehicleForm({ onClose, onAdded }: { onClose: () => void; onAdded: ()
           name,
           brand: brand || name.split(" ")[0],
           category,
-          dailyRate: Math.round(parseFloat(dailyRate) * 100),
+          dailyRate: Math.round(parseFloat(dailyRate || "0") * 100),
           seats: parseInt(seats),
           horsepower: parseInt(horsepower),
           imageUrl: imageUrl || "/cars/toyota-camry.png",
+          listingType,
+          ...(showSaleFields && {
+            salePrice: salePrice ? Math.round(parseFloat(salePrice) * 100) : null,
+            mileage: mileage ? parseInt(mileage) : null,
+            year: year ? parseInt(year) : null,
+            condition: condition || null,
+          }),
         }),
       });
 
@@ -309,6 +357,58 @@ function AddVehicleForm({ onClose, onAdded }: { onClose: () => void; onAdded: ()
           <label className="mb-1 block text-xs font-medium text-foreground">Horsepower</label>
           <input type="number" value={horsepower} onChange={(e) => setHorsepower(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#ff5f00]" />
         </div>
+        {/* Listing Type */}
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-foreground">Listing Type *</label>
+          <div className="flex gap-2">
+            {[
+              { value: "rent", label: "Rent Only" },
+              { value: "buy", label: "Sale Only" },
+              { value: "both", label: "Rent & Sale" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setListingType(opt.value)}
+                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                  listingType === opt.value
+                    ? "border-[#ff5f00] bg-[#ff5f00]/10 text-[#ff5f00]"
+                    : "border-border text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sale-specific fields */}
+        {showSaleFields && (
+          <>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground">Sale Price ($) *</label>
+              <input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="45000" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#ff5f00]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground">Mileage (miles)</label>
+              <input type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} placeholder="25000" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#ff5f00]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground">Year</label>
+              <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="2024" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#ff5f00]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground">Condition</label>
+              <select value={condition} onChange={(e) => setCondition(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#ff5f00]">
+                <option value="new">New</option>
+                <option value="like_new">Like New</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+              </select>
+            </div>
+          </>
+        )}
+
         <div className="md:col-span-2">
           <label className="mb-1 block text-xs font-medium text-foreground">Vehicle Image</label>
           <div className="flex items-center gap-3">

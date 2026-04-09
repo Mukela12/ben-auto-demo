@@ -10,12 +10,26 @@ export async function GET(request: Request) {
   const all = searchParams.get("all");
   const start = searchParams.get("start");
   const end = searchParams.get("end");
+  const mode = searchParams.get("mode"); // "rent" | "buy" | null
 
   const where: Record<string, unknown> = {};
   if (slug) where.slug = slug;
-  if (!all) where.available = true;
+
+  // For admin (all=true), show everything. Otherwise filter by status
+  if (!all) {
+    where.status = { notIn: ["sold", "unlisted"] };
+    where.available = true;
+  }
+
   if (category && category !== "all") where.category = category;
   if (featured === "true") where.featured = true;
+
+  // Filter by listing mode
+  if (mode === "buy") {
+    where.listingType = { in: ["buy", "both"] };
+  } else if (mode === "rent") {
+    where.listingType = { in: ["rent", "both"] };
+  }
 
   if (start && end) {
     where.bookings = {
@@ -32,7 +46,6 @@ export async function GET(request: Request) {
     if (!car) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
     }
-
     return NextResponse.json(car);
   }
 
@@ -64,16 +77,14 @@ export async function POST(request: Request) {
     const description =
       typeof body.description === "string" && body.description.trim().length > 0
         ? body.description.trim()
-        : `${name} delivers a premium rental experience with refined comfort, confident performance, and the practicality guests expect for business trips or weekend escapes.`;
+        : `${name} delivers a premium experience with refined comfort, confident performance, and the practicality you expect.`;
 
     if (!name) {
-      return NextResponse.json(
-        { error: "Vehicle name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Vehicle name is required" }, { status: 400 });
     }
 
     const dailyRate = Math.max(1000, Number(body.dailyRate) || 0);
+    const listingType = body.listingType || "rent";
 
     const slug = name
       .toLowerCase()
@@ -90,8 +101,7 @@ export async function POST(request: Request) {
         description,
         dailyRate,
         depositAmount:
-          Math.max(Number(body.depositAmount) || 0, Math.max(dailyRate * 2, 30000)) ||
-          50000,
+          Math.max(Number(body.depositAmount) || 0, Math.max(dailyRate * 2, 30000)) || 50000,
         seats: Math.max(Number(body.seats) || 5, 1),
         doors: Math.max(Number(body.doors) || 4, 2),
         transmission: body.transmission || "automatic",
@@ -103,6 +113,13 @@ export async function POST(request: Request) {
         galleryUrls: Array.isArray(body.galleryUrls) ? body.galleryUrls : [],
         featured: Boolean(body.featured),
         available: body.available !== false,
+        // Buy/sale fields
+        listingType,
+        salePrice: listingType !== "rent" ? (Number(body.salePrice) || null) : null,
+        mileage: listingType !== "rent" ? (Number(body.mileage) || null) : null,
+        year: listingType !== "rent" ? (Number(body.year) || null) : null,
+        condition: listingType !== "rent" ? (body.condition || null) : null,
+        status: body.status || "available",
       },
     });
 

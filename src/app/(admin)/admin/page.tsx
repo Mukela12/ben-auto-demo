@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { MetricCardsSkeleton, TableRowsSkeleton } from "@/components/ui/luxury-loader";
-import type { Booking } from "@/types";
+import type { Booking, QuoteRequest } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
@@ -16,17 +16,25 @@ const statusColors: Record<string, string> = {
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadBookings() {
+    async function loadData() {
       try {
-        const res = await fetch("/api/bookings");
-        const data = await res.json();
-        if (!cancelled && res.ok) {
-          setBookings(data);
+        const [bookingsRes, quotesRes] = await Promise.all([
+          fetch("/api/bookings"),
+          fetch("/api/quotes"),
+        ]);
+        const [bookingsData, quotesData] = await Promise.all([
+          bookingsRes.json(),
+          quotesRes.json(),
+        ]);
+        if (!cancelled) {
+          if (bookingsRes.ok) setBookings(bookingsData);
+          if (quotesRes.ok) setQuotes(quotesData);
         }
       } catch {
         // Keep the dashboard usable even if the network flakes.
@@ -37,7 +45,7 @@ export default function AdminDashboard() {
       }
     }
 
-    void loadBookings();
+    void loadData();
 
     return () => {
       cancelled = true;
@@ -84,6 +92,12 @@ export default function AdminDashboard() {
       change: `${bookings.filter((booking) => booking.depositStatus === "held").length} active`,
       icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
     },
+    {
+      label: "Quote Requests",
+      value: String(quotes.length),
+      change: `${quotes.filter((q) => q.status === "new").length} new`,
+      icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
+    },
   ];
 
   return (
@@ -101,7 +115,7 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-xl bg-card p-3 shadow-sm md:p-6">
                 <div className="flex items-center justify-between">
