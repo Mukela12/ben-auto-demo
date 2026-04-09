@@ -35,19 +35,24 @@ function FleetContent() {
   const [activeCategory, setActiveCategory] = useState<CarCategory | "all">("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [apiCars, setApiCars] = useState<Car[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setApiCars(null);
     const params = new URLSearchParams();
     if (mode === "buy") params.set("mode", "buy");
     else params.set("mode", "rent");
 
     fetch(`/api/cars?${params.toString()}`)
       .then((r) => r.json())
-      .then((data) => setApiCars(data))
-      .catch(() => setApiCars(null));
+      .then((data) => { setApiCars(data); setLoading(false); })
+      .catch(() => { setApiCars(null); setLoading(false); });
   }, [mode]);
 
-  const allCars = (apiCars || carsData) as Car[];
+  // In buy mode, only show API data (static data doesn't have sale prices)
+  // In rent mode, fall back to static data while loading
+  const allCars = (apiCars || (mode === "rent" ? carsData as unknown as Car[] : [])) as Car[];
 
   let filteredCars = [...allCars];
   if (activeCategory !== "all") {
@@ -148,13 +153,28 @@ function FleetContent() {
         </p>
 
         {/* Car Grid */}
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3 md:gap-6 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="overflow-hidden rounded-2xl bg-card shadow-sm">
+                <div className="h-32 animate-pulse bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] md:h-56" />
+                <div className="p-3 md:p-5 space-y-3">
+                  <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+                  <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-2 gap-3 md:gap-6 lg:grid-cols-3">
           {filteredCars.map((car) => (
             <CarCard key={car.slug} car={car} mode={mode} />
           ))}
         </div>
+        )}
 
-        {filteredCars.length === 0 && (
+        {!loading && filteredCars.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-lg font-medium text-muted-foreground">No vehicles found</p>
             <p className="mt-2 text-sm text-muted-foreground">Try adjusting your filters or switch modes.</p>
